@@ -1,41 +1,98 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# =========================
+# Dependencies
+# =========================
 node_modules/
 
+# =========================
 # Expo
+# =========================
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
+# =========================
+# Native build folders
+# =========================
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+
+ios/build/
+ios/Pods/
+
+# Gradle
+.gradle/
+
+# =========================
+# Keystore / signing 
+# =========================
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 
-# Metro
-.metro-health-check*
+# =========================
+# Kotlin / Java
+# =========================
+.kotlin/
 
-# debug
+# =========================
+# Metro / React Native
+# =========================
+.metro-health-check*
+*.hprof
+
+# =========================
+# Debug / logs
+# =========================
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
+# =========================
+# Environment files
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
 # macOS
+# =========================
 .DS_Store
-*.pem
 
-# local env files
-.env*.local
+# =========================
+# Windows
+# =========================
+Thumbs.db
 
-# typescript
+# =========================
+# TypeScript
+# =========================
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# =========================
+# EAS build
+# =========================
+eas-build/
+*.apk
+*.aab
+
+# =========================
+# =========================
+# /ios
+# /android
+
+# =========================
+# Misc
+# =========================
+*.orig.*
+*.pem
