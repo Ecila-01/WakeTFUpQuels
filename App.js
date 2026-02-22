@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState, } from 'react';
+import { Image, View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { NativeModules } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
@@ -7,7 +7,9 @@ import { ensureToken } from './src/storage/token';
 import QrPngExporter from './src/components/QRPngExporter';
 import QrScannerModal from './src/components/QrScannerModal';
 const { AlarmModule } = NativeModules;
+import { Appearance } from 'react-native';
 
+Appearance.setColorScheme('light');
 function nextTriggerTimeMillis(hour, minute) {
   const now = new Date();
   const t = new Date();
@@ -50,6 +52,10 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require('./src/icon.png')}
+        style={styles.logo}
+      />
       <Text style={styles.title}>Wake TF Up Quels</Text>
 
 
@@ -116,4 +122,10 @@ const styles = StyleSheet.create({
   pickerRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   pickerBox: { width: 140, borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
   pickerLabel: { textAlign: 'center', paddingTop: 8, fontWeight: '700' },
+  logo: {
+  width: 150,
+  height: 150,
+  resizeMode: 'contain',
+  marginBottom: 12,
+},
 });
