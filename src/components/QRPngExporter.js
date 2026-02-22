@@ -20,9 +20,9 @@ export default function QrPngExporter({ token, label = 'Save QR' }) {
         return;
       }
 
-      // Make sure we're in foreground (Activity exists)
+
       if (AppState.currentState !== 'active') {
-        // Don't alert here (it might also fail if activity is gone)
+
         console.log('Share blocked: app not active');
         return;
       }
@@ -36,10 +36,10 @@ export default function QrPngExporter({ token, label = 'Save QR' }) {
 
       const uri = await shotRef.current.capture();
 
-      // Give Android a moment to "settle" before opening share sheet
+
       await new Promise((r) => setTimeout(r, 250));
 
-      // Check again before opening share sheet
+
       if (AppState.currentState !== 'active') {
         console.log('Share cancelled: app became inactive');
         return;
@@ -51,7 +51,7 @@ export default function QrPngExporter({ token, label = 'Save QR' }) {
       });
     } catch (e) {
       console.log(e);
-      // Avoid Alert if activity is gone
+
       if (AppState.currentState === 'active') {
         Alert.alert('Export failed', String(e));
       }
@@ -63,7 +63,6 @@ export default function QrPngExporter({ token, label = 'Save QR' }) {
   const saveToGallery = async () => {
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
-
       if (status !== 'granted') {
         Alert.alert('Permission required', 'Allow storage permission to save QR.');
         return;

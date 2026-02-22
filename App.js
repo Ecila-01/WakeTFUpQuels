@@ -30,7 +30,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const t = await ensureToken();   // ✅ created once, reused forever
+      const t = await ensureToken();   
       setToken(t);
     })();
   }, []);
@@ -93,7 +93,7 @@ export default function App() {
             setScannerOpen(false);
             Alert.alert('Stopped', 'Correct QR scanned. Alarm stopped.');
           } else {
-            Alert.alert('Wrong QR', 'That is not your sink QR. Try again.');
+            Alert.alert('Wrong QR', 'That is not your QR. Try again.');
           }
         }}
       />
