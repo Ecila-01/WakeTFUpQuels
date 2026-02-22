@@ -5,21 +5,22 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
-      "package": "com.anonymous.WakeTFUpQueIs"
+      "package": "com.anonymous.WakeTFUpQueIs",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
-    "web": {
-      "favicon": "./assets/icon.png"
+    "extra": {
+      "eas": {
+        "projectId": "ad136998-66c5-4035-8ead-725f8ffc0175"
+      }
     }
   }
 }
