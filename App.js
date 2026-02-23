@@ -1,5 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Image, View, Text, Pressable, StyleSheet, Alert, useColorScheme } from 'react-native';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import {
+  Image,
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  useColorScheme,
+  Platform,
+  PermissionsAndroid,
+  Linking,
+} from 'react-native';
 import { NativeModules } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
@@ -42,6 +53,51 @@ const THEME = {
   },
 };
 
+// --- Notifications helpers (JS-only) ---
+async function ensureNotificationPermission() {
+  // Only needed for Android 13+ (API 33+)
+  if (Platform.OS !== 'android') return true;
+  if (Platform.Version < 33) return true;
+
+  const perm = PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS;
+
+  const already = await PermissionsAndroid.check(perm);
+  if (already) return true;
+
+  const result = await PermissionsAndroid.request(perm);
+
+  if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
+
+  Alert.alert(
+    'Enable notifications',
+    'This app needs Notifications allowed so it can show the alarm notification / popup.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Open Settings', onPress: () => Linking.openSettings() },
+    ]
+  );
+
+  return false;
+}
+
+function promptEnableFullScreenOnce(setFlag) {
+  Alert.alert(
+    'Enable full-screen alarm popups',
+    'For the alarm to pop up over the lock screen, enable:\n\nNotifications → Full-screen notifications → Allow\n\n(If you skip, the alarm may ring but not show a popup.)',
+    [
+      { text: 'Not now', style: 'cancel', onPress: () => setFlag(true) },
+      {
+        text: 'Open Settings',
+        onPress: async () => {
+          setFlag(true);
+          // Fallback: app settings page (from there: Notifications → Full-screen notifications)
+          await Linking.openSettings();
+        },
+      },
+    ]
+  );
+}
+
 export default function App() {
   const systemScheme = useColorScheme(); // 'light' | 'dark' | null
   const [mode, setMode] = useState(systemScheme === 'dark' ? 'dark' : 'light');
@@ -51,6 +107,9 @@ export default function App() {
   const [hour, setHour] = useState(new Date().getHours());
   const [minute, setMinute] = useState((new Date().getMinutes() + 1) % 60);
   const [scannerOpen, setScannerOpen] = useState(false);
+
+  // only show the “full-screen notifications” guidance once per app run
+  const [fullScreenHintShown, setFullScreenHintShown] = useState(false);
 
   const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
   const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
@@ -69,6 +128,9 @@ export default function App() {
         const fallback = systemScheme === 'dark' ? 'dark' : 'light';
         setMode(fallback);
       }
+
+      // notifications popup (Android 13+)
+      await ensureNotificationPermission();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -79,10 +141,23 @@ export default function App() {
     await setThemeMode(next);
   };
 
-  const scheduleAlarm = () => {
+  const scheduleAlarm = async () => {
+    // 1) Notifications allowed (Android 13+ popup)
+    const notifOk = await ensureNotificationPermission();
+    if (!notifOk) return;
+
+    // 2) Guide user to enable Full-screen notifications (settings toggle) — once per run
+    if (!fullScreenHintShown) {
+      promptEnableFullScreenOnce(setFullScreenHintShown);
+      return;
+    }
+
+    // 3) Exact alarm special access (opens settings if needed) — keep as-is
     AlarmModule.requestExactAlarmPermission?.();
+
     const trigger = nextTriggerTimeMillis(hour, minute);
     AlarmModule.scheduleAlarm(trigger);
+
     Alert.alert('Alarm set', `Scheduled for: ${new Date(trigger).toLocaleString()}`);
   };
 
@@ -94,7 +169,7 @@ export default function App() {
         onPress={toggleTheme}
       >
         <Text style={{ color: colors.text, fontWeight: '800' }}>
-          Theme: {mode === 'light' ? 'Dark' : 'Light'}
+          Theme: {mode === 'light' ? 'Light' : 'Dark'}
         </Text>
       </Pressable>
 
@@ -105,7 +180,7 @@ export default function App() {
 
       {/* Time Picker */}
       <View style={styles.pickerRow}>
-        <View style={[styles.pickerBox, { borderColor: colors.border, backgroundColor: colors.card ,  }]}>
+        <View style={[styles.pickerBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
           <Text style={[styles.pickerLabel, { color: colors.text }]}>Hour</Text>
           <Picker
             selectedValue={hour}
@@ -113,7 +188,7 @@ export default function App() {
             mode="dropdown"
             dropdownIconColor={colors.text}
             style={{ color: colors.text, backgroundColor: colors.card }}
-            itemStyle={{ color: colors.text }}   // iOS mostly
+            itemStyle={{ color: colors.text }}
           >
             {hours.map(h => (
               <Picker.Item key={h} label={String(h).padStart(2, '0')} value={h} />
@@ -129,7 +204,7 @@ export default function App() {
             mode="dropdown"
             dropdownIconColor={colors.text}
             style={{ color: colors.text, backgroundColor: colors.card }}
-            itemStyle={{ color: colors.text }}   // iOS mostly
+            itemStyle={{ color: colors.text }}
           >
             {minutes.map(m => (
               <Picker.Item key={m} label={String(m).padStart(2, '0')} value={m} />
