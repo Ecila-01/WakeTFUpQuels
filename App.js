@@ -94,7 +94,7 @@ export default function App() {
         onPress={toggleTheme}
       >
         <Text style={{ color: colors.text, fontWeight: '800' }}>
-          Theme: {mode === 'light' ? 'Light' : 'Dark'}
+          Theme: {mode === 'light' ? 'Dark' : 'Light'}
         </Text>
       </Pressable>
 
