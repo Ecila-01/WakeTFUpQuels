@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Image,
   View,
@@ -31,7 +32,7 @@ function nextTriggerTimeMillis(hour, minute) {
   if (t.getTime() <= now.getTime()) t.setDate(t.getDate() + 1);
   return t.getTime();
 }
-
+const FULLSCREEN_HINT_KEY ='fullscreenHintShown:v1'
 const THEME = {
   light: {
     bg: '#FFFFFF',
@@ -53,9 +54,9 @@ const THEME = {
   },
 };
 
-// --- Notifications helpers (JS-only) ---
+
 async function ensureNotificationPermission() {
-  // Only needed for Android 13+ (API 33+)
+
   if (Platform.OS !== 'android') return true;
   if (Platform.Version < 33) return true;
 
@@ -80,17 +81,22 @@ async function ensureNotificationPermission() {
   return false;
 }
 
-function promptEnableFullScreenOnce(setFlag) {
+async function promptEnableFullScreenOnce() {
   Alert.alert(
     'Enable full-screen alarm popups',
     'For the alarm to pop up over the lock screen, enable:\n\nNotifications → Full-screen notifications → Allow\n\n(If you skip, the alarm may ring but not show a popup.)',
     [
-      { text: 'Not now', style: 'cancel', onPress: () => setFlag(true) },
+      {
+        text: 'Not now',
+        style: 'cancel',
+        onPress: async () => {
+          await AsyncStorage.setItem(FULLSCREEN_HINT_KEY, '1');
+        },
+      },
       {
         text: 'Open Settings',
         onPress: async () => {
-          setFlag(true);
-          // Fallback: app settings page (from there: Notifications → Full-screen notifications)
+          await AsyncStorage.setItem(FULLSCREEN_HINT_KEY, '1');
           await Linking.openSettings();
         },
       },
@@ -109,18 +115,18 @@ export default function App() {
   const [scannerOpen, setScannerOpen] = useState(false);
 
   // only show the “full-screen notifications” guidance once per app run
-  const [fullScreenHintShown, setFullScreenHintShown] = useState(false);
+  const [fullScreenHintShown, setFullScreenHintShown] = useState(true);
 
   const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
   const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
 
   useEffect(() => {
     (async () => {
-      // token
+
       const t = await ensureToken();
       setToken(t);
 
-      // theme: load saved preference, otherwise use system default
+
       const saved = await getThemeMode();
       if (saved === 'light' || saved === 'dark') {
         setMode(saved);
@@ -129,10 +135,13 @@ export default function App() {
         setMode(fallback);
       }
 
-      // notifications popup (Android 13+)
+
       await ensureNotificationPermission();
+      const savedHint = await AsyncStorage.getItem(FULLSCREEN_HINT_KEY);
+      if (savedHint === '1') setFullScreenHintShown(true);
+      else setFullScreenHintShown(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const toggleTheme = async () => {
@@ -142,17 +151,16 @@ export default function App() {
   };
 
   const scheduleAlarm = async () => {
-    // 1) Notifications allowed (Android 13+ popup)
+
     const notifOk = await ensureNotificationPermission();
     if (!notifOk) return;
 
-    // 2) Guide user to enable Full-screen notifications (settings toggle) — once per run
     if (!fullScreenHintShown) {
-      promptEnableFullScreenOnce(setFullScreenHintShown);
+      await promptEnableFullScreenOnce()
+      setFullScreenHintShown(true)
       return;
     }
 
-    // 3) Exact alarm special access (opens settings if needed) — keep as-is
     AlarmModule.requestExactAlarmPermission?.();
 
     const trigger = nextTriggerTimeMillis(hour, minute);
